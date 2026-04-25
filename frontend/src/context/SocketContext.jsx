@@ -17,12 +17,10 @@ export function SocketProvider({ children }) {
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ Connected to matchmaking server');
       setConnected(true);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
       setConnected(false);
     });
 

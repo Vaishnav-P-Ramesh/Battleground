@@ -14,20 +14,8 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-// ═════════════════════════════════════════════════════════════════
-// 🎮 MATCHMAKING SYSTEM
-// ═════════════════════════════════════════════════════════════════
-
-// Store active players in matchmaking queue
-// Format: { userId, username, rating, socketId, joinedAt }
 const matchmakingQueue = new Map();
-
-// Store active battles
-// Format: { battleId, player1: {...}, player2: {...}, createdAt }
 const activeBattles = new Map();
-
-// Store all connected players
-// Format: { userId, username, rating, socketId, status }
 const connectedPlayers = new Map();
 
 // Calculate rating difference for matching
@@ -89,18 +77,9 @@ function createBattle(player1Id, player2Id) {
   return battle;
 }
 
-// ═════════════════════════════════════════════════════════════════
-// 🌐 SOCKET.IO EVENTS
-// ═════════════════════════════════════════════════════════════════
-
 io.on('connection', (socket) => {
-  console.log(`✅ New connection: ${socket.id}`);
-
-  // Player joins matchmaking
   socket.on('join_matchmaking', (playerData) => {
     const { userId, username, rating } = playerData;
-    
-    console.log(`🔍 ${username} (Rating: ${rating}) joining queue...`);
 
     // Add player to queue
     matchmakingQueue.set(userId, {
@@ -124,9 +103,7 @@ io.on('connection', (socket) => {
     const opponentId = findOpponent(rating, userId);
     
     if (opponentId) {
-      console.log(`🎮 Match found! ${username} vs ${matchmakingQueue.get(opponentId).username}`);
-      
-      // Create battle
+      const battle = createBattle(userId, opponentId);
       const battle = createBattle(userId, opponentId);
       
       if (battle) {
@@ -148,7 +125,6 @@ io.on('connection', (socket) => {
         connectedPlayers.get(opponentId).status = 'in_battle';
       }
     } else {
-      console.log(`⏳ No opponent found for ${username}. Waiting in queue...`);
       socket.emit('searching', { message: 'Searching for opponent...' });
     }
 
@@ -160,7 +136,6 @@ io.on('connection', (socket) => {
   socket.on('cancel_matchmaking', (userId) => {
     matchmakingQueue.delete(userId);
     connectedPlayers.delete(userId);
-    console.log(`❌ Player ${userId} left matchmaking queue`);
     io.emit('queue_updated', { queueSize: matchmakingQueue.size });
   });
 
@@ -169,7 +144,6 @@ io.on('connection', (socket) => {
     const battle = activeBattles.get(battleId);
     if (battle) {
       battle.status = 'started';
-      console.log(`🚀 Battle ${battleId} started!`);
     }
   });
 
@@ -194,7 +168,6 @@ io.on('connection', (socket) => {
     if (battle) {
       battle.status = 'completed';
       battle.winnerId = winnerId;
-      console.log(`✨ Battle ${battleId} ended. Winner: ${winnerId}`);
       
       // Notify both players with results
       io.to(battle.player1.socketId).emit('battle_result', {
@@ -226,7 +199,6 @@ io.on('connection', (socket) => {
 
   // Disconnect
   socket.on('disconnect', () => {
-    console.log(`🔌 Disconnected: ${socket.id}`);
     
     // Remove from queue and connected players
     for (const [userId, player] of matchmakingQueue.entries()) {
@@ -245,10 +217,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ═════════════════════════════════════════════════════════════════
-// 📡 REST API ENDPOINTS
-// ═════════════════════════════════════════════════════════════════
-
 app.get('/api/stats', (req, res) => {
   res.json({
     onlinePlayers: connectedPlayers.size,
@@ -262,13 +230,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// ═════════════════════════════════════════════════════════════════
-// 🚀 START SERVER
-// ═════════════════════════════════════════════════════════════════
-
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`\n🎮 DSA Battleground Server running on port ${PORT}`);
-  console.log(`📍 WebSocket endpoint: ws://localhost:${PORT}`);
-  console.log(`📍 REST API: http://localhost:${PORT}\n`);
+  console.log(`Server running on port ${PORT}`);
 });

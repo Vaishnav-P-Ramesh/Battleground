@@ -25,17 +25,13 @@ export default function Matchmaking() {
     };
 
     socket.emit('join_matchmaking', playerData);
-    console.log('Joined matchmaking with:', playerData);
 
-    // Listen for match found
     socket.on('match_found', (data) => {
-      console.log('Match found!', data);
       setOpponent(data.opponent);
       setBattleId(data.battleId);
       setMatchFound(true);
     });
 
-    // Listen for search updates
     socket.on('searching', (data) => {
       setSearchStatus(data.message);
     });
