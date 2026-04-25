@@ -1,91 +1,151 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
-function Matchmaking() {
+export default function Matchmaking() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { socket, connected } = useSocket();
+  const [elapsed, setElapsed] = useState(0);
   const [matchFound, setMatchFound] = useState(false);
-  const [searchTime, setSearchTime] = useState(0);
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(100);
+  const [opponent, setOpponent] = useState(null);
+  const [battleId, setBattleId] = useState(null);
+  const [searchStatus, setSearchStatus] = useState('Searching...');
 
+  // Join matchmaking when component mounts and socket is connected
   useEffect(() => {
-    let matchInterval;
-    if (!matchFound) {
-      matchInterval = setInterval(() => {
-        setSearchTime((prev) => {
-          const newTime = prev + 1;
-          if (newTime > 2 + Math.random() * 3) {
-            clearInterval(matchInterval);
-            setMatchFound(true);
-          }
-          return newTime;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(matchInterval);
+    if (!socket || !connected || !user) return;
+
+    const playerData = {
+      userId: user.id || `user_${Date.now()}`,
+      username: user.username || 'Player_01',
+      rating: user.rating || 1500
+    };
+
+    socket.emit('join_matchmaking', playerData);
+    console.log('Joined matchmaking with:', playerData);
+
+    // Listen for match found
+    socket.on('match_found', (data) => {
+      console.log('Match found!', data);
+      setOpponent(data.opponent);
+      setBattleId(data.battleId);
+      setMatchFound(true);
+    });
+
+    // Listen for search updates
+    socket.on('searching', (data) => {
+      setSearchStatus(data.message);
+    });
+
+    return () => {
+      socket.off('match_found');
+      socket.off('searching');
+    };
+  }, [socket, connected, user]);
+
+  // Search timer
+  useEffect(() => {
+    if (matchFound) return;
+    const timer = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(timer);
   }, [matchFound]);
 
+  // Countdown after match found
   useEffect(() => {
-    let countInterval;
-    if (matchFound) {
-      countInterval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(countInterval);
-            navigate('/battle');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(countInterval);
-  }, [matchFound, navigate]);
+    if (!matchFound) return;
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 0) { 
+          navigate('/battle', { state: { battleId, opponent } }); 
+          return 0; 
+        }
+        return c - 20;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [matchFound, navigate, battleId, opponent]);
 
-  const formatTime = (seconds) => {
-    return `0:${seconds.toString().padStart(2, '0')}`;
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  return (
-    <section id="matchmaking" className="screen active">
+  // Show connection status while connecting
+  if (!connected) {
+    return (
       <div className="matchmaking-container">
-        {!matchFound ? (
-          <div id="searching-state" className="searching-state">
-            <div className="radar">
-              <div className="radar-sweep"></div>
-              <div className="avatar my-radar-avatar">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user_1337&backgroundColor=1f2937" alt="You" />
-              </div>
-            </div>
-            <h2 className="searching-text">SEARCHING FOR OPPONENT<span className="dots">...</span></h2>
-            <p className="search-wait">Estimated wait: 0:15</p>
-            <p className="elapsed-time">{formatTime(searchTime)}</p>
-            <button className="btn-secondary mt-4" onClick={() => navigate('/dashboard')}>Cancel</button>
-          </div>
-        ) : (
-          <div id="match-found-state" className="match-found-state">
-            <h2 className="glow-text">MATCH FOUND!</h2>
-            <div className="versus-container">
-              <div className="player-card you slide-in-left">
-                <img className="large-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user_1337&backgroundColor=1f2937" alt="You" />
-                <h3>user_1337</h3>
-                <p className="accent">2150 ELO</p>
-              </div>
-              <div className="vs-badge pulse">VS</div>
-              <div className="player-card opponent slide-in-right">
-                <img className="large-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=dark_coder&backgroundColor=ef4444" alt="Opponent" />
-                <h3>dark_coder</h3>
-                <p className="loss">2185 ELO</p>
-              </div>
-            </div>
-            <div className="countdown-bar">
-              <div className="countdown-fill" style={{ width: countdown === 3 ? '100%' : '0%', transition: 'width 3s linear' }}></div>
-            </div>
-            <p className="battle-starts-text">Battle begins in <span className="accent text-xl">{countdown}</span>...</p>
-          </div>
-        )}
+        <div className="radar">
+          <div className="radar-sweep"></div>
+        </div>
+        <h2 className="searching-text">CONNECTING...</h2>
+        <p className="search-wait">Establishing connection to matchmaking server...</p>
+        <div className="elapsed-time">0:00</div>
       </div>
-    </section>
+    );
+  }
+
+  if (matchFound && opponent) {
+    return (
+      <div className="matchmaking-container">
+        <div className="match-found-state">
+          <h2 className="glow-text" style={{ fontSize: '1.8rem', letterSpacing: 5, marginBottom: 8 }}>MATCH FOUND</h2>
+          <div className="versus-container">
+            <div className="player-card you slide-in-left">
+              <div className="large-avatar" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--accent-subtle)', color: 'var(--accent)', fontWeight: 800, fontSize: '2rem'
+              }}>
+                {(user?.username || 'P')[0]}
+              </div>
+              <span style={{ fontWeight: 700 }}>{user?.username || 'Player_01'}</span>
+              <span className="accent" style={{ fontFamily: 'var(--font-mono)' }}>⚡ {user?.rating || 1500}</span>
+            </div>
+            <span className="vs-badge">VS</span>
+            <div className="player-card opponent slide-in-right">
+              <div className="large-avatar" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(248,113,113,0.1)', color: 'var(--loss)', fontWeight: 800, fontSize: '2rem',
+                borderColor: 'var(--loss)'
+              }}>
+                {(opponent?.username || 'O')[0]}
+              </div>
+              <span style={{ fontWeight: 700 }}>{opponent?.username || 'Opponent'}</span>
+              <span style={{ color: 'var(--loss)', fontFamily: 'var(--font-mono)' }}>⚡ {opponent?.rating || 1500}</span>
+            </div>
+          </div>
+          <div className="countdown-bar">
+            <div className="countdown-fill" style={{ width: `${countdown}%` }}></div>
+          </div>
+          <p className="battle-starts-text">Battle Starting...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="matchmaking-container">
+      <div className="radar">
+        <div className="radar-sweep"></div>
+        <div className="my-radar-avatar avatar">
+          <div style={{
+            width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--accent-subtle)', color: 'var(--accent)', fontWeight: 800, fontSize: '1.2rem'
+          }}>
+            {(user?.username || 'P')[0]}
+          </div>
+        </div>
+      </div>
+      <h2 className="searching-text">SEARCHING</h2>
+      <p className="search-wait">{searchStatus}</p>
+      <div className="elapsed-time">{formatTime(elapsed)}</div>
+      <button className="btn-secondary" onClick={() => {
+        if (socket) socket.emit('cancel_matchmaking', user?.id || `user_${Date.now()}`);
+        navigate('/dashboard');
+      }}>Cancel</button>
+    </div>
   );
 }
-
-export default Matchmaking;

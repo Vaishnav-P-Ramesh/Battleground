@@ -1,110 +1,117 @@
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, Zap, Calendar, Activity } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Swords, TrendingUp, Target, Clock, Zap, Trophy, ChevronRight } from 'lucide-react';
 
-function Dashboard() {
+export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
-    <section id="dashboard" className="screen active">
+    <>
       <div className="dashboard-grid">
-        <div className="dash-left">
-          <div className="glass-card stat-card profile-summary">
-            <div className="card-header">
-              <h3>Overview</h3>
-              <BarChart2 />
+        {/* Stats Card */}
+        <div className="glass-card">
+          <div className="card-header">
+            <h3>Your Stats</h3>
+            <TrendingUp />
+          </div>
+          <div className="stat-highlight">
+            <span className="label">Current Rating</span>
+            <span className="value">{user?.rating || 1500}</span>
+          </div>
+          <div className="stat-row">
+            <div className="stat-item">
+              <span className="label">Wins</span>
+              <span className="value win">24</span>
             </div>
-            <div className="stat-highlight">
-              <span className="label">Global Rank</span>
+            <div className="stat-item">
+              <span className="label">Losses</span>
+              <span className="value loss">8</span>
+            </div>
+            <div className="stat-item">
+              <span className="label">Streak</span>
+              <span className="value streak">🔥 5</span>
+            </div>
+            <div className="stat-item">
+              <span className="label">Rank</span>
               <span className="value accent">#42</span>
             </div>
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="label">Wins</span>
-                <span className="value win">142</span>
-              </div>
-              <div className="stat-item">
-                <span className="label">Losses</span>
-                <span className="value loss">38</span>
-              </div>
-              <div className="stat-item">
-                <span className="label">Win Rate</span>
-                <span className="value">78.8%</span>
-              </div>
-              <div className="stat-item">
-                <span className="label">Streak</span>
-                <span className="value streak">🔥 5</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="glass-card start-battle-card">
-            <div className="glowing-orb"></div>
-            <h2>Ready for Combat?</h2>
-            <p>Find an opponent of similar skill to test your coding limits.</p>
-            <button className="btn-primary animate-pulse-btn" onClick={() => navigate('/matchmaking')}>
-              <Zap /> FIND MATCH
-            </button>
           </div>
         </div>
 
-        <div className="dash-right">
-          <div className="glass-card contests-card">
-            <div className="card-header">
-              <h3>Ongoing Contests</h3>
-              <Calendar />
-            </div>
-            <div className="contest-list">
-              <div className="contest-item live">
-                <div className="c-info">
-                  <h4>Weekly Byte #45</h4>
-                  <span className="c-time"><span className="dot"></span>Live Now - 1h 20m left</span>
-                </div>
-                <button className="btn-secondary">Join</button>
-              </div>
-              <div className="contest-item live">
-                <div className="c-info">
-                  <h4>1v1 Blitz Tournament</h4>
-                  <span className="c-time"><span className="dot"></span>Live Now - 5h left</span>
-                </div>
-                <button className="btn-secondary">Join</button>
-              </div>
-              <div className="contest-item">
-                <div className="c-info">
-                  <h4>Global Coding Clash</h4>
-                  <span className="c-time">Starts in 2 days</span>
-                </div>
-                <button className="btn-secondary disabled">Wait</button>
-              </div>
-            </div>
+        {/* Contests Card */}
+        <div className="glass-card">
+          <div className="card-header">
+            <h3>Upcoming Contests</h3>
+            <Trophy />
           </div>
-          
-          <div className="glass-card recent-activity">
-            <div className="card-header">
-              <h3>Recent Matches</h3>
-              <Activity />
+          <div className="contest-list">
+            <div className="contest-item live">
+              <div className="c-info">
+                <h4>Weekly Showdown</h4>
+                <span className="c-time"><span className="dot"></span> Live Now</span>
+              </div>
+              <button className="btn-secondary btn-sm" onClick={() => navigate('/matchmaking')}>
+                Join <ChevronRight size={14} />
+              </button>
             </div>
-            <div className="activity-list">
-              <div className="match-row win">
-                <span className="m-result">VICTORY</span>
-                <span className="m-op">vs. dark_coder</span>
-                <span className="m-rating">+12</span>
+            <div className="contest-item">
+              <div className="c-info">
+                <h4>Algorithm Arena</h4>
+                <span className="c-time"><Clock size={14} /> Starts in 2h</span>
               </div>
-              <div className="match-row loss">
-                <span className="m-result">DEFEAT</span>
-                <span className="m-op">vs. algo_master</span>
-                <span className="m-rating">-8</span>
+              <button className="btn-secondary btn-sm disabled">Soon</button>
+            </div>
+            <div className="contest-item">
+              <div className="c-info">
+                <h4>Data Structure Duel</h4>
+                <span className="c-time"><Clock size={14} /> Tomorrow</span>
               </div>
-              <div className="match-row win">
-                <span className="m-result">VICTORY</span>
-                <span className="m-op">vs. bit_manip</span>
-                <span className="m-rating">+15</span>
-              </div>
+              <button className="btn-secondary btn-sm disabled">Soon</button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+
+      {/* Start Battle */}
+      <div className="glass-card start-battle-card">
+        <div className="glowing-orb"></div>
+        <h2>Ready for Battle?</h2>
+        <p>Challenge a random opponent in a real-time coding duel. Solve problems faster to win rating points.</p>
+        <button className="btn-primary animate-pulse-btn" onClick={() => navigate('/matchmaking')}>
+          <Swords size={22} /> Find Opponent
+        </button>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="recent-activity glass-card" style={{ marginTop: 32 }}>
+        <div className="card-header">
+          <h3>Recent Matches</h3>
+          <Target />
+        </div>
+        <div className="activity-list">
+          <div className="match-row win">
+            <span className="m-result">Victory</span>
+            <span className="m-op">vs CodeNinja_99</span>
+            <span className="m-rating">+25</span>
+          </div>
+          <div className="match-row win">
+            <span className="m-result">Victory</span>
+            <span className="m-op">vs AlgoMaster</span>
+            <span className="m-rating">+18</span>
+          </div>
+          <div className="match-row loss">
+            <span className="m-result">Defeat</span>
+            <span className="m-op">vs ByteWizard</span>
+            <span className="m-rating">-12</span>
+          </div>
+          <div className="match-row win">
+            <span className="m-result">Victory</span>
+            <span className="m-op">vs StackOverflow</span>
+            <span className="m-rating">+22</span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
-
-export default Dashboard;
