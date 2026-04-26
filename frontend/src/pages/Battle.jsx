@@ -152,19 +152,20 @@ function Battle() {
   };
 
   const handleRun = () => {
-    // Check if there's actual code (not just comments/template)
+    // Check if there's actual code (not just template)
     const code = codeRef.current?.value || '';
     
-    // Remove all comments
-    let cleanCode = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+    // Remove comments and whitespace
+    let cleanCode = code
+      .replace(/\/\/.*$/gm, '') // remove line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '') // remove block comments
+      .replace(/\s+/g, ''); // remove all whitespace
     
-    // Remove all whitespace and common template keywords
-    cleanCode = cleanCode
-      .replace(/\s+/g, '')
-      .replace(/class|Solution|public|private|protected|void|int|vector|ListNode|function|const|let|var|return/g, '');
+    // Default template code (what's there initially)
+    const defaultTemplate = `classSolution{public:ListNode*mergeKLists(vector<ListNode*>&lists){};};`;
     
-    // If the remaining code is empty or too short, it's just a template
-    if (!cleanCode || cleanCode.length < 5) {
+    // Check if code is still the template or nearly empty
+    if (!code.trim() || code.includes('Write your solution here')) {
       addToast('Please write actual implementation code first!', 'error');
       return;
     }
