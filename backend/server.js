@@ -112,7 +112,6 @@ io.on('connection', (socket) => {
     
     if (opponentId) {
       const battle = createBattle(userId, opponentId);
-      const battle = createBattle(userId, opponentId);
       
       if (battle) {
         // Notify both players
