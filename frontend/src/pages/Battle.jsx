@@ -26,7 +26,7 @@ function Battle() {
     }
     if (location.state?.question) {
       setQuestion(location.state.question);
-      setMaxTestCases(location.state.question.testCases || 3);
+      setMaxTestCases(location.state.question.testCaseCount || 3);
     }
   }, [location.state]);
 

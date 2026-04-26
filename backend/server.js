@@ -14,7 +14,11 @@ const questionsPath = path.join(__dirname, 'questions.json');
 const questions = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
 
 function getRandomQuestion() {
-  return questions[Math.floor(Math.random() * questions.length)];
+  const question = questions[Math.floor(Math.random() * questions.length)];
+  return {
+    ...question,
+    testCaseCount: question.testCases.length
+  };
 }
 
 const app = express();
@@ -80,7 +84,7 @@ function createBattle(player1Id, player2Id) {
       id: question.id,
       title: question.title,
       difficulty: question.difficulty,
-      testCases: question.testCases,
+      testCaseCount: question.testCaseCount,
       description: question.description,
       examples: question.examples
     },

@@ -3,7 +3,13 @@
     "id": 1,
     "title": "Two Sum",
     "difficulty": "Easy",
-    "testCases": 5,
+    "testCases": [
+      { "input": "[2,7,11,15], target=9", "output": "[0,1]", "passed": false },
+      { "input": "[3,2,4], target=6", "output": "[1,2]", "passed": false },
+      { "input": "[3,3], target=6", "output": "[0,1]", "passed": false },
+      { "input": "[2,5,5,11], target=10", "output": "[1,2]", "passed": false },
+      { "input": "[1,2,3,4,5], target=9", "output": "[3,4]", "passed": false }
+    ],
     "description": "Given an array of integers nums and an integer target, return the indices of the two numbers that add up to target. You may assume that each input has exactly one solution, and you may not use the same element twice.",
     "examples": {
       "input": "nums = [2,7,11,15], target = 9",
@@ -15,7 +21,15 @@
     "id": 2,
     "title": "Merge K Sorted Lists",
     "difficulty": "Hard",
-    "testCases": 7,
+    "testCases": [
+      { "input": "[[1,4,5],[1,3,4],[2,6]]", "output": "[1,1,2,3,4,4,5,6]", "passed": false },
+      { "input": "[]", "output": "[]", "passed": false },
+      { "input": "[[]]", "output": "[]", "passed": false },
+      { "input": "[[1]]", "output": "[1]", "passed": false },
+      { "input": "[[1,2],[1,2],[1,2]]", "output": "[1,1,1,2,2,2]", "passed": false },
+      { "input": "[[5],[1],[1,0,1,2,3]]", "output": "[0,1,1,2,3,5]", "passed": false },
+      { "input": "[[1,4,5,7],[2,3],[6,8,9]]", "output": "[1,2,3,4,5,6,7,8,9]", "passed": false }
+    ],
     "description": "You are given an array of k linked-lists lists, each linked-list is sorted in ascending order. Merge all the linked-lists into one sorted linked-list and return it.",
     "examples": {
       "input": "lists = [[1,4,5],[1,3,4],[2,6]]",
@@ -27,7 +41,14 @@
     "id": 3,
     "title": "Longest Substring Without Repeating Characters",
     "difficulty": "Medium",
-    "testCases": 6,
+    "testCases": [
+      { "input": "\"abcabcbb\"", "output": "3", "passed": false },
+      { "input": "\"bbbbb\"", "output": "1", "passed": false },
+      { "input": "\"pwwkew\"", "output": "3", "passed": false },
+      { "input": "\" \"", "output": "1", "passed": false },
+      { "input": "\"au\"", "output": "2", "passed": false },
+      { "input": "\"dvdf\"", "output": "3", "passed": false }
+    ],
     "description": "Given a string s, find the length of the longest substring without repeating characters.",
     "examples": {
       "input": "s = \"abcabcbb\"",
@@ -39,7 +60,16 @@
     "id": 4,
     "title": "Median of Two Sorted Arrays",
     "difficulty": "Hard",
-    "testCases": 8,
+    "testCases": [
+      { "input": "[1,3], [2]", "output": "2.00000", "passed": false },
+      { "input": "[1,2], [3,4]", "output": "2.50000", "passed": false },
+      { "input": "[0,0], [0,0]", "output": "0.00000", "passed": false },
+      { "input": "[], [1]", "output": "1.00000", "passed": false },
+      { "input": "[2], []", "output": "2.00000", "passed": false },
+      { "input": "[1,3,5,7,9], [2,4,6,8,10]", "output": "5.50000", "passed": false },
+      { "input": "[1,2,3,4,5], [10,20,30]", "output": "5.50000", "passed": false },
+      { "input": "[1,1,1,1], [1,1,1,1]", "output": "1.00000", "passed": false }
+    ],
     "description": "Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).",
     "examples": {
       "input": "nums1 = [1,3], nums2 = [2]",
@@ -51,7 +81,13 @@
     "id": 5,
     "title": "Add Two Numbers",
     "difficulty": "Medium",
-    "testCases": 5,
+    "testCases": [
+      { "input": "[2,4,3], [5,6,4]", "output": "[7,0,8]", "passed": false },
+      { "input": "[0], [0]", "output": "[0]", "passed": false },
+      { "input": "[9,9,9,9,9,9,9], [9,9,9,9]", "output": "[8,9,9,9,0,0,0,1]", "passed": false },
+      { "input": "[9], [9,9]", "output": "[8,0,1]", "passed": false },
+      { "input": "[5], [5]", "output": "[0,1]", "passed": false }
+    ],
     "description": "You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.",
     "examples": {
       "input": "l1 = [2,4,3], l2 = [5,6,4]",
@@ -63,7 +99,12 @@
     "id": 6,
     "title": "Reverse Integer",
     "difficulty": "Easy",
-    "testCases": 4,
+    "testCases": [
+      { "input": "123", "output": "321", "passed": false },
+      { "input": "-123", "output": "-321", "passed": false },
+      { "input": "120", "output": "21", "passed": false },
+      { "input": "0", "output": "0", "passed": false }
+    ],
     "description": "Given a signed 32-bit integer x, return x with its digits reversed. If reversing x causes the value to go outside the signed 32-bit integer range [-2^31, 2^31 - 1], then return 0.",
     "examples": {
       "input": "x = 123",
@@ -75,7 +116,13 @@
     "id": 7,
     "title": "Container With Most Water",
     "difficulty": "Medium",
-    "testCases": 5,
+    "testCases": [
+      { "input": "[1,8,6,2,5,4,8,3,7]", "output": "49", "passed": false },
+      { "input": "[1,1]", "output": "1", "passed": false },
+      { "input": "[4,3,2,1,4]", "output": "16", "passed": false },
+      { "input": "[2,3,4,5,18,17,6]", "output": "17", "passed": false },
+      { "input": "[1,2,4,3]", "output": "4", "passed": false }
+    ],
     "description": "You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]). Find two lines that together with the x-axis form a container, such that the container contains the most water.",
     "examples": {
       "input": "height = [1,8,6,2,5,4,8,3,7]",
@@ -87,7 +134,17 @@
     "id": 8,
     "title": "Regular Expression Matching",
     "difficulty": "Hard",
-    "testCases": 9,
+    "testCases": [
+      { "input": "s=\"aa\", p=\"a\"", "output": "false", "passed": false },
+      { "input": "s=\"aa\", p=\"a*\"", "output": "true", "passed": false },
+      { "input": "s=\"ab\", p=\".*\"", "output": "true", "passed": false },
+      { "input": "s=\"aab\", p=\"c*a*b\"", "output": "true", "passed": false },
+      { "input": "s=\"mississippi\", p=\"mis*iss*p*.\"", "output": "false", "passed": false },
+      { "input": "s=\"\", p=\"\"", "output": "true", "passed": false },
+      { "input": "s=\"a\", p=\"ab*\"", "output": "true", "passed": false },
+      { "input": "s=\"aaaa\", p=\"***a\"", "output": "false", "passed": false },
+      { "input": "s=\"aab\", p=\"a*b\"", "output": "true", "passed": false }
+    ],
     "description": "Given an input string s and a pattern p, implement regular expression matching with support for '.' and '*' where: '.' Matches any single character, '*' Matches zero or more of the preceding element.",
     "examples": {
       "input": "s = \"aa\", p = \"a\"",
@@ -99,7 +156,12 @@
     "id": 9,
     "title": "Palindrome Number",
     "difficulty": "Easy",
-    "testCases": 4,
+    "testCases": [
+      { "input": "121", "output": "true", "passed": false },
+      { "input": "-121", "output": "false", "passed": false },
+      { "input": "10", "output": "false", "passed": false },
+      { "input": "0", "output": "true", "passed": false }
+    ],
     "description": "Given an integer x, return true if x is a palindrome, and false otherwise. Follow up: Could you solve it without converting the integer to a string?",
     "examples": {
       "input": "x = 121",
@@ -111,7 +173,14 @@
     "id": 10,
     "title": "Binary Tree Level Order Traversal",
     "difficulty": "Medium",
-    "testCases": 6,
+    "testCases": [
+      { "input": "[3,9,20,null,null,15,7]", "output": "[[3],[9,20],[15,7]]", "passed": false },
+      { "input": "[1]", "output": "[[1]]", "passed": false },
+      { "input": "[]", "output": "[]", "passed": false },
+      { "input": "[1,2,3,4,5,6]", "output": "[[1],[2,3],[4,5,6]]", "passed": false },
+      { "input": "[1,2]", "output": "[[1],[2]]", "passed": false },
+      { "input": "[1,null,2]", "output": "[[1],[2]]", "passed": false }
+    ],
     "description": "Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).",
     "examples": {
       "input": "root = [3,9,20,null,null,15,7]",
