@@ -4,12 +4,16 @@ import { Swords } from 'lucide-react';
 export default function Result() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isVictory = location.state?.result !== 'defeat';
+  const isVictory = location.state?.result === 'victory';
+  const yourTestCases = location.state?.yourTestCases || 0;
+  const opponentTestCases = location.state?.opponentTestCases || 0;
+  const timeTaken = location.state?.timeTaken || '00:00';
+  const opponentName = location.state?.opponentName || 'Opponent';
 
   return (
     <div className="result-container">
       <h1 className={`result-title ${isVictory ? 'victory' : 'defeat'}`}>
-        {isVictory ? 'VICTORY' : 'DEFEAT'}
+        {isVictory ? '🏆 VICTORY' : '💔 DEFEAT'}
       </h1>
 
       <div className="rating-change">
@@ -24,15 +28,15 @@ export default function Result() {
       <div className="stats-grid">
         <div className="glass-card stat-box">
           <span className="label">Time</span>
-          <span className="value">08:42</span>
+          <span className="value">{timeTaken}</span>
         </div>
         <div className="glass-card stat-box">
-          <span className="label">Problems Solved</span>
-          <span className="value">2/3</span>
+          <span className="label">Your Test Cases</span>
+          <span className="value">{yourTestCases}</span>
         </div>
         <div className="glass-card stat-box">
-          <span className="label">Accuracy</span>
-          <span className="value">85%</span>
+          <span className="label">{opponentName}'s Test Cases</span>
+          <span className="value">{opponentTestCases}</span>
         </div>
       </div>
 

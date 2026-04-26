@@ -75,7 +75,7 @@ function Battle() {
     return () => clearInterval(oppActivityInterval);
   }, []);
 
-  // Listen for opponent submission
+  // Listen for opponent submission and battle result
   useEffect(() => {
     if (!socket) return;
 
@@ -84,23 +84,6 @@ function Battle() {
       setOppTestCases(data.testCasesPassed || 0);
       setOppStatus('Submitted!');
       addToast(`${data.username} submitted (${data.testCasesPassed}/${maxTestCases} cases)!`, 'warning');
-      setBattleEnded(true);
-      
-      // End battle after 2 seconds
-      setTimeout(() => {
-        const secondsPassed = 15 * 60 - timeLeft;
-        const mPass = Math.floor(secondsPassed / 60);
-        const sPass = secondsPassed % 60;
-        const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
-        
-        navigate('/result', {
-          state: {
-            isWin: myTestCases > oppTestCases,
-            timeTaken,
-            battleId
-          }
-        });
-      }, 2000);
     });
 
     socket.on('battle_result', (data) => {
@@ -110,22 +93,26 @@ function Battle() {
       const sPass = secondsPassed % 60;
       const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
 
-      navigate('/result', {
-        state: {
-          isWin,
-          timeTaken,
-          battleId,
-          opponentTestCases: data.opponentTestCases,
-          yourTestCases: data.yourTestCases
-        }
-      });
+      // Navigate to result with winner determination from backend
+      setTimeout(() => {
+        navigate('/result', {
+          state: {
+            result: isWin ? 'victory' : 'defeat',
+            timeTaken,
+            battleId,
+            yourTestCases: data.yourTestCases,
+            opponentTestCases: data.opponentTestCases,
+            opponentName: data.opponent?.username
+          }
+        });
+      }, 2000);
     });
 
     return () => {
       socket.off('opponent_submitted');
       socket.off('battle_result');
     };
-  }, [socket, timeLeft, myProgress, myTestCases, user?.id, battleId, navigate]);
+  }, [socket, timeLeft, user?.id, battleId, navigate]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -157,49 +144,30 @@ function Battle() {
   };
 
   const handleSubmit = () => {
-    if (battleEnded) return;
+    if (battleEnded || !socket || !battleId) return;
     
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setMyProgress(100);
-      setBattleEnded(true);
+    setMyProgress(100);
+    setBattleEnded(true);
 
-      addToast(`Solution submitted: ${myTestCases}/${maxTestCases} cases!`, 'success');
+    addToast(`Solution submitted: ${myTestCases}/${maxTestCases} cases!`, 'success');
 
-      const secondsPassed = 15 * 60 - timeLeft;
-      const mPass = Math.floor(secondsPassed / 60);
-      const sPass = secondsPassed % 60;
-      const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
+    // Send submission to backend - backend will determine winner
+    socket.emit('code_submitted', {
+      battleId,
+      userId: user?.id,
+      username: user?.username,
+      testCasesPassed: myTestCases
+    });
 
-      // Send submission to opponent via Socket.IO
-      if (socket && battleId) {
-        socket.emit('code_submitted', {
-          battleId,
-          userId: user?.id,
-          username: user?.username,
-          testCasesPassed: myTestCases
-        });
+    // Emit battle_end to trigger winner determination on backend
+    socket.emit('battle_end', {
+      battleId,
+      userId: user?.id,
+      testCasesPassed: myTestCases
+    });
 
-        socket.emit('battle_end', {
-          battleId,
-          winnerId: user?.id,
-          testCasesPassed: myTestCases
-        });
-      }
-
-      setTimeout(() => {
-        navigate('/result', {
-          state: {
-            isWin: myTestCases > oppTestCases,
-            timeTaken,
-            battleId,
-            yourTestCases: myTestCases,
-            opponentTestCases: oppTestCases
-          }
-        });
-      }, 2000);
-    }, 2000);
+    setIsSubmitting(false);
   };
 
   return (
