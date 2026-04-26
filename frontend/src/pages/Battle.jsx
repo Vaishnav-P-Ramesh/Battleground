@@ -11,6 +11,8 @@ function Battle() {
   const { socket } = useSocket();
   const [opponent, setOpponent] = useState(null);
   const [battleId, setBattleId] = useState(null);
+  const [question, setQuestion] = useState(null);
+  const [maxTestCases, setMaxTestCases] = useState(3);
 
   // Get opponent data from navigation state
   useEffect(() => {
@@ -21,6 +23,10 @@ function Battle() {
     }
     if (location.state?.battleId) {
       setBattleId(location.state.battleId);
+    }
+    if (location.state?.question) {
+      setQuestion(location.state.question);
+      setMaxTestCases(location.state.question.testCases || 3);
     }
   }, [location.state]);
 
@@ -36,7 +42,6 @@ function Battle() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [battleEnded, setBattleEnded] = useState(false);
-  const MAX_TEST_CASES = 3;
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -78,7 +83,7 @@ function Battle() {
       setOppProgress(100);
       setOppTestCases(data.testCasesPassed || 0);
       setOppStatus('Submitted!');
-      addToast(`${data.username} submitted (${data.testCasesPassed}/${MAX_TEST_CASES} cases)!`, 'warning');
+      addToast(`${data.username} submitted (${data.testCasesPassed}/${maxTestCases} cases)!`, 'warning');
       setBattleEnded(true);
       
       // End battle after 2 seconds
@@ -140,13 +145,13 @@ function Battle() {
     setIsRunning(true);
     setTimeout(() => {
       setIsRunning(false);
-      // Simulate test cases passed (0-3)
-      const testsPassed = Math.floor(Math.random() * (MAX_TEST_CASES + 1));
+      // Simulate test cases passed (0-maxTestCases)
+      const testsPassed = Math.floor(Math.random() * (maxTestCases + 1));
       setMyTestCases(testsPassed);
-      if (testsPassed === MAX_TEST_CASES) {
-        addToast(`Running on sample tests: All ${testsPassed}/${MAX_TEST_CASES} Passed!`, 'success');
+      if (testsPassed === maxTestCases) {
+        addToast(`Running on sample tests: All ${testsPassed}/${maxTestCases} Passed!`, 'success');
       } else {
-        addToast(`Running on sample tests: ${testsPassed}/${MAX_TEST_CASES} Passed`, 'warning');
+        addToast(`Running on sample tests: ${testsPassed}/${maxTestCases} Passed`, 'warning');
       }
     }, 1500);
   };
@@ -160,7 +165,7 @@ function Battle() {
       setMyProgress(100);
       setBattleEnded(true);
 
-      addToast(`Solution submitted: ${myTestCases}/${MAX_TEST_CASES} cases!`, 'success');
+      addToast(`Solution submitted: ${myTestCases}/${maxTestCases} cases!`, 'success');
 
       const secondsPassed = 15 * 60 - timeLeft;
       const mPass = Math.floor(secondsPassed / 60);
@@ -226,15 +231,19 @@ function Battle() {
             Displays the coding problem title, description, and sample test cases. */}
         <div className="problem-panel glass-card">
           <div className="problem-header">
-            <h3 className="problem-title"><span className="accent">[Hard]</span> Merge K Sorted Lists</h3>
+            <h3 className="problem-title">
+              <span className="accent">[{question?.difficulty || 'Hard'}]</span> {question?.title || 'Loading...'}
+            </h3>
             <button className="btn-secondary btn-sm"><Info size={16} /> Details</button>
           </div>
           <div className="problem-desc mt-2">
-            <p>You are given an array of <code>k</code> linked-lists <code>lists</code>, each linked-list is sorted in ascending order. <em>Merge all the linked-lists into one sorted linked-list and return it.</em></p>
-            <div className="test-cases mt-2">
-              <div className="tc"><strong>Input:</strong> lists = [[1,4,5],[1,3,4],[2,6]]</div>
-              <div className="tc"><strong>Output:</strong> [1,1,2,3,4,4,5,6]</div>
-            </div>
+            <p>{question?.description || 'Loading problem details...'}</p>
+            {question?.examples && (
+              <div className="test-cases mt-2">
+                <div className="tc"><strong>Input:</strong> {question.examples.input}</div>
+                <div className="tc"><strong>Output:</strong> {question.examples.output}</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -259,7 +268,7 @@ function Battle() {
             </div>
             <div className="pane-footer">
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                Test Cases: <span className="accent">{myTestCases}/{MAX_TEST_CASES}</span>
+                Test Cases: <span className="accent">{myTestCases}/{maxTestCases}</span>
               </div>
               <button className="btn-secondary btn-sm" onClick={handleRun} disabled={isRunning}>
                 {isRunning ? <Loader size={16} className="spin" /> : <Play size={16} />} Run
@@ -290,7 +299,7 @@ function Battle() {
             </div>
             <div className="pane-footer opp-footer">
               <div className="opp-stats">
-                <span>Opponent: <span className="accent">{oppTestCases}/{MAX_TEST_CASES}</span> Cases Passed</span>
+                <span>Opponent: <span className="accent">{oppTestCases}/{maxTestCases}</span> Cases Passed</span>
               </div>
             </div>
           </div>

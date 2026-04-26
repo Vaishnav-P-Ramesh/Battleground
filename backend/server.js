@@ -3,6 +3,19 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load questions from JSON file
+const questionsPath = path.join(__dirname, 'questions.json');
+const questions = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+
+function getRandomQuestion() {
+  return questions[Math.floor(Math.random() * questions.length)];
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -58,8 +71,19 @@ function createBattle(player1Id, player2Id) {
   if (!player1 || !player2) return null;
 
   const battleId = uuidv4();
+  const question = getRandomQuestion();
+  
   const battle = {
     battleId,
+    questionId: question.id,
+    question: {
+      id: question.id,
+      title: question.title,
+      difficulty: question.difficulty,
+      testCases: question.testCases,
+      description: question.description,
+      examples: question.examples
+    },
     player1: {
       userId: player1Id,
       username: player1.username,
@@ -118,12 +142,14 @@ io.on('connection', (socket) => {
         io.to(battle.player1.socketId).emit('match_found', {
           battleId: battle.battleId,
           opponent: battle.player2,
+          question: battle.question,
           role: 'player1'
         });
 
         io.to(battle.player2.socketId).emit('match_found', {
           battleId: battle.battleId,
           opponent: battle.player1,
+          question: battle.question,
           role: 'player2'
         });
 

@@ -12,6 +12,7 @@ export default function Matchmaking() {
   const [countdown, setCountdown] = useState(100);
   const [opponent, setOpponent] = useState(null);
   const [battleId, setBattleId] = useState(null);
+  const [question, setQuestion] = useState(null);
   const [searchStatus, setSearchStatus] = useState('Searching...');
 
   // Join matchmaking when component mounts and socket is connected
@@ -29,6 +30,7 @@ export default function Matchmaking() {
     socket.on('match_found', (data) => {
       setOpponent(data.opponent);
       setBattleId(data.battleId);
+      setQuestion(data.question);
       setMatchFound(true);
     });
 
@@ -55,14 +57,14 @@ export default function Matchmaking() {
     const interval = setInterval(() => {
       setCountdown((c) => {
         if (c <= 0) { 
-          navigate('/battle', { state: { battleId, opponent } }); 
+          navigate('/battle', { state: { battleId, opponent, question } }); 
           return 0; 
         }
         return c - 20;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [matchFound, navigate, battleId, opponent]);
+  }, [matchFound, navigate, battleId, opponent, question]);
 
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
