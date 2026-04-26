@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { Info, RotateCcw, Settings, Play, CloudLightning, Loader, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 function Battle() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { socket } = useSocket();
   const [opponent, setOpponent] = useState(null);
+  const [battleId, setBattleId] = useState(null);
 
   // Get opponent data from navigation state
   useEffect(() => {
@@ -15,6 +18,9 @@ function Battle() {
       setOpponent(location.state.opponent);
     } else {
       setOpponent({ username: 'dark_coder', rating: 1520 });
+    }
+    if (location.state?.battleId) {
+      setBattleId(location.state.battleId);
     }
   }, [location.state]);
 
@@ -27,6 +33,7 @@ function Battle() {
   const [toasts, setToasts] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [battleEnded, setBattleEnded] = useState(false);
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -57,21 +64,57 @@ function Battle() {
       }
     }, 2000);
 
-    const t1 = setTimeout(() => {
-      setOppProgress(33);
-      addToast('Opponent passed 1/3 cases!', 'warning');
-    }, 15000);
-    const t2 = setTimeout(() => {
-      setOppProgress(66);
-      addToast('Opponent passed 2/3 cases!', 'warning');
-    }, 30000);
+    return () => clearInterval(oppActivityInterval);
+  }, []);
+
+  // Listen for opponent submission
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('opponent_submitted', (data) => {
+      setOppProgress(100);
+      setOppStatus('Submitted!');
+      addToast(`${data.username} submitted solution!`, 'warning');
+      setBattleEnded(true);
+      
+      // End battle after 2 seconds
+      setTimeout(() => {
+        const secondsPassed = 15 * 60 - timeLeft;
+        const mPass = Math.floor(secondsPassed / 60);
+        const sPass = secondsPassed % 60;
+        const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
+        
+        navigate('/result', {
+          state: {
+            isWin: myProgress === 100,
+            timeTaken,
+            battleId
+          }
+        });
+      }, 2000);
+    });
+
+    socket.on('battle_result', (data) => {
+      const isWin = data.winnerId === user?.id;
+      const secondsPassed = 15 * 60 - timeLeft;
+      const mPass = Math.floor(secondsPassed / 60);
+      const sPass = secondsPassed % 60;
+      const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
+
+      navigate('/result', {
+        state: {
+          isWin,
+          timeTaken,
+          battleId
+        }
+      });
+    });
 
     return () => {
-      clearInterval(oppActivityInterval);
-      clearTimeout(t1);
-      clearTimeout(t2);
+      socket.off('opponent_submitted');
+      socket.off('battle_result');
     };
-  }, []);
+  }, [socket, timeLeft, myProgress, user?.id, battleId, navigate]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -96,19 +139,42 @@ function Battle() {
   };
 
   const handleSubmit = () => {
+    if (battleEnded) return;
+    
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
       addToast('All Test Cases Passed!', 'success');
       setMyProgress(100);
+      setBattleEnded(true);
 
       const secondsPassed = 15 * 60 - timeLeft;
       const mPass = Math.floor(secondsPassed / 60);
       const sPass = secondsPassed % 60;
       const timeTaken = `${mPass}:${sPass.toString().padStart(2, '0')}`;
 
+      // Send submission to opponent via Socket.IO
+      if (socket && battleId) {
+        socket.emit('code_submitted', {
+          battleId,
+          userId: user?.id,
+          username: user?.username
+        });
+
+        socket.emit('battle_end', {
+          battleId,
+          winnerId: user?.id
+        });
+      }
+
       setTimeout(() => {
-        navigate('/result', { state: { isWin: true, timeTaken } });
+        navigate('/result', {
+          state: {
+            isWin: true,
+            timeTaken,
+            battleId
+          }
+        });
       }, 2000);
     }, 2000);
   };

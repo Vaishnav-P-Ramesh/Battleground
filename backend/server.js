@@ -159,7 +159,16 @@ io.on('connection', (socket) => {
     const { battleId, userId, username } = data;
     const battle = activeBattles.get(battleId);
     if (battle) {
-      // Notify opponent
+      // Mark this player as submitted
+      if (battle.player1.userId === userId) {
+        battle.player1.submitted = true;
+        battle.player1.submittedAt = Date.now();
+      } else {
+        battle.player2.submitted = true;
+        battle.player2.submittedAt = Date.now();
+      }
+
+      // Notify opponent about submission
       const opponent = battle.player1.userId === userId ? battle.player2 : battle.player1;
       io.to(opponent.socketId).emit('opponent_submitted', {
         username,
@@ -174,18 +183,36 @@ io.on('connection', (socket) => {
     const battle = activeBattles.get(battleId);
     if (battle) {
       battle.status = 'completed';
-      battle.winnerId = winnerId;
+      
+      // Determine winner - whoever submitted first
+      let actualWinnerId = winnerId;
+      if (battle.player1.submitted && battle.player2.submitted) {
+        // Both submitted - winner is who submitted first
+        actualWinnerId = battle.player1.submittedAt < battle.player2.submittedAt 
+          ? battle.player1.userId 
+          : battle.player2.userId;
+      } else if (battle.player1.submitted) {
+        actualWinnerId = battle.player1.userId;
+      } else if (battle.player2.submitted) {
+        actualWinnerId = battle.player2.userId;
+      }
+      
+      battle.winnerId = actualWinnerId;
       
       // Notify both players with results
       io.to(battle.player1.socketId).emit('battle_result', {
         battleId,
-        winnerId,
-        yourId: battle.player1.userId
+        winnerId: actualWinnerId,
+        yourId: battle.player1.userId,
+        opponent: battle.player2,
+        isWin: battle.player1.userId === actualWinnerId
       });
       io.to(battle.player2.socketId).emit('battle_result', {
         battleId,
-        winnerId,
-        yourId: battle.player2.userId
+        winnerId: actualWinnerId,
+        yourId: battle.player2.userId,
+        opponent: battle.player1,
+        isWin: battle.player2.userId === actualWinnerId
       });
 
       // Clean up after 5 seconds
