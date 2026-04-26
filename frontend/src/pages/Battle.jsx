@@ -27,6 +27,8 @@ function Battle() {
   const [timeLeft, setTimeLeft] = useState(15 * 60);
   const [oppProgress, setOppProgress] = useState(0);
   const [myProgress, setMyProgress] = useState(0);
+  const [myTestCases, setMyTestCases] = useState(0);
+  const [oppTestCases, setOppTestCases] = useState(0);
   const [oppStatus, setOppStatus] = useState('Typing...');
   const [isThinking, setIsThinking] = useState(false);
   const [mockCodeLines, setMockCodeLines] = useState([40, 60, 80, 40]);
@@ -34,6 +36,7 @@ function Battle() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [battleEnded, setBattleEnded] = useState(false);
+  const MAX_TEST_CASES = 3;
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -73,8 +76,9 @@ function Battle() {
 
     socket.on('opponent_submitted', (data) => {
       setOppProgress(100);
+      setOppTestCases(data.testCasesPassed || 0);
       setOppStatus('Submitted!');
-      addToast(`${data.username} submitted solution!`, 'warning');
+      addToast(`${data.username} submitted (${data.testCasesPassed}/${MAX_TEST_CASES} cases)!`, 'warning');
       setBattleEnded(true);
       
       // End battle after 2 seconds
@@ -86,7 +90,7 @@ function Battle() {
         
         navigate('/result', {
           state: {
-            isWin: myProgress === 100,
+            isWin: myTestCases > oppTestCases,
             timeTaken,
             battleId
           }
@@ -95,7 +99,7 @@ function Battle() {
     });
 
     socket.on('battle_result', (data) => {
-      const isWin = data.winnerId === user?.id;
+      const isWin = data.isWin;
       const secondsPassed = 15 * 60 - timeLeft;
       const mPass = Math.floor(secondsPassed / 60);
       const sPass = secondsPassed % 60;
@@ -105,7 +109,9 @@ function Battle() {
         state: {
           isWin,
           timeTaken,
-          battleId
+          battleId,
+          opponentTestCases: data.opponentTestCases,
+          yourTestCases: data.yourTestCases
         }
       });
     });
@@ -114,7 +120,7 @@ function Battle() {
       socket.off('opponent_submitted');
       socket.off('battle_result');
     };
-  }, [socket, timeLeft, myProgress, user?.id, battleId, navigate]);
+  }, [socket, timeLeft, myProgress, myTestCases, user?.id, battleId, navigate]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -134,7 +140,14 @@ function Battle() {
     setIsRunning(true);
     setTimeout(() => {
       setIsRunning(false);
-      addToast('Running on sample tests: Accepted!', 'success');
+      // Simulate test cases passed (0-3)
+      const testsPassed = Math.floor(Math.random() * (MAX_TEST_CASES + 1));
+      setMyTestCases(testsPassed);
+      if (testsPassed === MAX_TEST_CASES) {
+        addToast(`Running on sample tests: All ${testsPassed}/${MAX_TEST_CASES} Passed!`, 'success');
+      } else {
+        addToast(`Running on sample tests: ${testsPassed}/${MAX_TEST_CASES} Passed`, 'warning');
+      }
     }, 1500);
   };
 
@@ -144,9 +157,10 @@ function Battle() {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      addToast('All Test Cases Passed!', 'success');
       setMyProgress(100);
       setBattleEnded(true);
+
+      addToast(`Solution submitted: ${myTestCases}/${MAX_TEST_CASES} cases!`, 'success');
 
       const secondsPassed = 15 * 60 - timeLeft;
       const mPass = Math.floor(secondsPassed / 60);
@@ -158,21 +172,25 @@ function Battle() {
         socket.emit('code_submitted', {
           battleId,
           userId: user?.id,
-          username: user?.username
+          username: user?.username,
+          testCasesPassed: myTestCases
         });
 
         socket.emit('battle_end', {
           battleId,
-          winnerId: user?.id
+          winnerId: user?.id,
+          testCasesPassed: myTestCases
         });
       }
 
       setTimeout(() => {
         navigate('/result', {
           state: {
-            isWin: true,
+            isWin: myTestCases > oppTestCases,
             timeTaken,
-            battleId
+            battleId,
+            yourTestCases: myTestCases,
+            opponentTestCases: oppTestCases
           }
         });
       }, 2000);
@@ -240,6 +258,9 @@ function Battle() {
               <textarea className="code-input" spellCheck="false" defaultValue={`class Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Write your solution here...\n    }\n};`} />
             </div>
             <div className="pane-footer">
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                Test Cases: <span className="accent">{myTestCases}/{MAX_TEST_CASES}</span>
+              </div>
               <button className="btn-secondary btn-sm" onClick={handleRun} disabled={isRunning}>
                 {isRunning ? <Loader size={16} className="spin" /> : <Play size={16} />} Run
               </button>
@@ -269,7 +290,7 @@ function Battle() {
             </div>
             <div className="pane-footer opp-footer">
               <div className="opp-stats">
-                <span>Opponent Progress: <span className="accent">{Math.floor((oppProgress / 100) * 3)}/3</span> Cases Passed</span>
+                <span>Opponent: <span className="accent">{oppTestCases}/{MAX_TEST_CASES}</span> Cases Passed</span>
               </div>
             </div>
           </div>

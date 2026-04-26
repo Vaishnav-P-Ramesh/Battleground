@@ -156,45 +156,59 @@ io.on('connection', (socket) => {
 
   // Player submits code
   socket.on('code_submitted', (data) => {
-    const { battleId, userId, username } = data;
+    const { battleId, userId, username, testCasesPassed } = data;
     const battle = activeBattles.get(battleId);
     if (battle) {
       // Mark this player as submitted
       if (battle.player1.userId === userId) {
         battle.player1.submitted = true;
         battle.player1.submittedAt = Date.now();
+        battle.player1.testCasesPassed = testCasesPassed || 0;
       } else {
         battle.player2.submitted = true;
         battle.player2.submittedAt = Date.now();
+        battle.player2.testCasesPassed = testCasesPassed || 0;
       }
 
       // Notify opponent about submission
       const opponent = battle.player1.userId === userId ? battle.player2 : battle.player1;
       io.to(opponent.socketId).emit('opponent_submitted', {
         username,
-        battleId
+        battleId,
+        testCasesPassed: testCasesPassed || 0
       });
     }
   });
 
   // Battle ends
   socket.on('battle_end', (data) => {
-    const { battleId, winnerId } = data;
+    const { battleId, winnerId, testCasesPassed } = data;
     const battle = activeBattles.get(battleId);
     if (battle) {
       battle.status = 'completed';
       
-      // Determine winner - whoever submitted first
+      // Ensure both players have testCasesPassed values
+      const player1TestCases = battle.player1.testCasesPassed || 0;
+      const player2TestCases = battle.player2.testCasesPassed || 0;
+      
+      // Determine winner based on test cases passed
       let actualWinnerId = winnerId;
-      if (battle.player1.submitted && battle.player2.submitted) {
-        // Both submitted - winner is who submitted first
-        actualWinnerId = battle.player1.submittedAt < battle.player2.submittedAt 
-          ? battle.player1.userId 
-          : battle.player2.userId;
-      } else if (battle.player1.submitted) {
+      
+      if (player1TestCases > player2TestCases) {
         actualWinnerId = battle.player1.userId;
-      } else if (battle.player2.submitted) {
+      } else if (player2TestCases > player1TestCases) {
         actualWinnerId = battle.player2.userId;
+      } else if (player1TestCases === player2TestCases && player1TestCases > 0) {
+        // If both have same test cases, winner is who submitted first
+        if (battle.player1.submitted && battle.player2.submitted) {
+          actualWinnerId = battle.player1.submittedAt < battle.player2.submittedAt 
+            ? battle.player1.userId 
+            : battle.player2.userId;
+        } else if (battle.player1.submitted) {
+          actualWinnerId = battle.player1.userId;
+        } else if (battle.player2.submitted) {
+          actualWinnerId = battle.player2.userId;
+        }
       }
       
       battle.winnerId = actualWinnerId;
@@ -204,6 +218,8 @@ io.on('connection', (socket) => {
         battleId,
         winnerId: actualWinnerId,
         yourId: battle.player1.userId,
+        yourTestCases: player1TestCases,
+        opponentTestCases: player2TestCases,
         opponent: battle.player2,
         isWin: battle.player1.userId === actualWinnerId
       });
@@ -211,6 +227,8 @@ io.on('connection', (socket) => {
         battleId,
         winnerId: actualWinnerId,
         yourId: battle.player2.userId,
+        yourTestCases: player2TestCases,
+        opponentTestCases: player1TestCases,
         opponent: battle.player1,
         isWin: battle.player2.userId === actualWinnerId
       });
