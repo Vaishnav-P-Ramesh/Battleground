@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -9,6 +9,7 @@ function Battle() {
   const location = useLocation();
   const { user } = useAuth();
   const { socket } = useSocket();
+  const codeRef = useRef(null);
   const [opponent, setOpponent] = useState(null);
   const [battleId, setBattleId] = useState(null);
   const [question, setQuestion] = useState(null);
@@ -42,6 +43,7 @@ function Battle() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [battleEnded, setBattleEnded] = useState(false);
+  const [codeSubmittedOnce, setCodeSubmittedOnce] = useState(false);
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -129,6 +131,15 @@ function Battle() {
   };
 
   const handleRun = () => {
+    // Check if there's actual code (not just comments/template)
+    const code = codeRef.current?.value || '';
+    const cleanCode = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').trim();
+    
+    if (!cleanCode) {
+      addToast('Please write some code first!', 'error');
+      return;
+    }
+
     setIsRunning(true);
     setTimeout(() => {
       setIsRunning(false);
@@ -144,11 +155,12 @@ function Battle() {
   };
 
   const handleSubmit = () => {
-    if (battleEnded || !socket || !battleId) return;
+    if (battleEnded || codeSubmittedOnce || !socket || !battleId) return;
     
     setIsSubmitting(true);
     setMyProgress(100);
     setBattleEnded(true);
+    setCodeSubmittedOnce(true);
 
     addToast(`Solution submitted: ${myTestCases}/${maxTestCases} cases!`, 'success');
 
@@ -232,7 +244,7 @@ function Battle() {
               <div className="line-numbers">
                 {Array.from({length: 10}).map((_, i) => <div key={i}>{i+1}</div>)}
               </div>
-              <textarea className="code-input" spellCheck="false" defaultValue={`class Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Write your solution here...\n    }\n};`} />
+              <textarea ref={codeRef} className="code-input" spellCheck="false" defaultValue={`class Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Write your solution here...\n    }\n};`} />
             </div>
             <div className="pane-footer">
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
