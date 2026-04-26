@@ -45,6 +45,27 @@ function Battle() {
   const [battleEnded, setBattleEnded] = useState(false);
   const [codeSubmittedOnce, setCodeSubmittedOnce] = useState(false);
 
+  // Listen for get_battle_details response from server
+  useEffect(() => {
+    if (!socket || !battleId) return;
+
+    const handleBattleDetails = (data) => {
+      if (data.question) {
+        setQuestion(data.question);
+        setMaxTestCases(data.question.testCaseCount || 3);
+      }
+    };
+
+    socket.on('battle_details', handleBattleDetails);
+    
+    // Request battle details from server to ensure we get the correct question
+    socket.emit('get_battle_details', { battleId });
+
+    return () => {
+      socket.off('battle_details', handleBattleDetails);
+    };
+  }, [socket, battleId]);
+
   useEffect(() => {
     const timerInterval = setInterval(() => {
       setTimeLeft((prev) => {

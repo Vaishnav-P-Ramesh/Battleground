@@ -184,6 +184,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Get battle details (used to retrieve the correct question for both players)
+  socket.on('get_battle_details', (data) => {
+    const { battleId } = data;
+    const battle = activeBattles.get(battleId);
+    if (battle) {
+      socket.emit('battle_details', {
+        battleId,
+        question: battle.question
+      });
+    }
+  });
+
   // Player submits code
   socket.on('code_submitted', (data) => {
     const { battleId, userId, username, testCasesPassed } = data;
