@@ -6,8 +6,16 @@ import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const httpServer = createServer(app);
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
 const io = new Server(httpServer, {
-  cors: { origin: '*' },
+  cors: { 
+    origin: FRONTEND_URL,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
   transports: ['websocket', 'polling']
 });
 
