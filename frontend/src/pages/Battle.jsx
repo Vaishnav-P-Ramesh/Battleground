@@ -154,10 +154,18 @@ function Battle() {
   const handleRun = () => {
     // Check if there's actual code (not just comments/template)
     const code = codeRef.current?.value || '';
-    const cleanCode = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').trim();
     
-    if (!cleanCode) {
-      addToast('Please write some code first!', 'error');
+    // Remove all comments
+    let cleanCode = code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+    
+    // Remove all whitespace and common template keywords
+    cleanCode = cleanCode
+      .replace(/\s+/g, '')
+      .replace(/class|Solution|public|private|protected|void|int|vector|ListNode|function|const|let|var|return/g, '');
+    
+    // If the remaining code is empty or too short, it's just a template
+    if (!cleanCode || cleanCode.length < 5) {
+      addToast('Please write actual implementation code first!', 'error');
       return;
     }
 
