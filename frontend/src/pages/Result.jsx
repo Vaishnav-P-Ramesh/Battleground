@@ -1,14 +1,19 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Swords } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Result() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const isVictory = location.state?.result === 'victory';
   const yourTestCases = location.state?.yourTestCases || 0;
   const opponentTestCases = location.state?.opponentTestCases || 0;
   const timeTaken = location.state?.timeTaken || '00:00';
   const opponentName = location.state?.opponentName || 'Opponent';
+  const currentRating = location.state?.currentRating ?? user?.rating ?? 1500;
+  const ratingChange = isVictory ? 25 : -15;
+  const updatedRating = currentRating + ratingChange;
 
   return (
     <div className="result-container">
@@ -17,11 +22,11 @@ export default function Result() {
       </h1>
 
       <div className="rating-change">
-        <span className="old-rating">1475</span>
+        <span className="old-rating">{currentRating}</span>
         <span>→</span>
-        <span className="new-rating">1500</span>
+        <span className="new-rating">{updatedRating}</span>
         <span className={`points-earned ${isVictory ? 'win' : 'loss'}`}>
-          {isVictory ? '+25' : '-15'}
+          {ratingChange > 0 ? `+${ratingChange}` : ratingChange}
         </span>
       </div>
 
